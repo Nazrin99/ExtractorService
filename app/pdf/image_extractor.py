@@ -1,5 +1,5 @@
 import fitz
-from app.util.util import pdf_to_byte_stream
+from app.util.util import pdf_to_byte_stream, reconstruct_image_from_byte_stream, delete_file
 from PIL import Image
 import pytesseract
 import io
@@ -50,7 +50,7 @@ def extract_images_from_pdf_byte_stream_by_page(pdf_byte_stream):
                 image_bytes = base_image["image"]  # Get the image bytes
 
                 # Append the byte stream for this image to the list
-                images_on_page.append(image_bytes)
+                images_on_page.append(extract_text_from_image_byte_stream(image_bytes))
 
             # Add the page entry to the dictionary (empty list if no images)
             images_by_page[page_num + 1] = images_on_page
@@ -73,8 +73,34 @@ def extract_text_from_image_byte_stream(image_byte_stream):
     Returns:
         str: Extracted text from the image.
     """
+
+    # Create a temp file from the byte stream and return the file path
+    temp_file_path = reconstruct_image_from_byte_stream(image_byte_stream, r"C:\Users\Nazrin\PycharmProjects\ExtractorService\temp")
+
     # Convert the byte stream to a PIL Image
-    image = Image.open(io.BytesIO(image_byte_stream))
+    image = Image.open(temp_file_path)
 
     # Perform OCR on the image
     extracted_text = pytesseract.image_to_string(image)
+
+    delete_file(temp_file_path)
+
+    return extracted_text
+
+def extract_text_from_image_file_path(image_file_path):
+    """
+    Extracts text from an image file using OCR.
+
+    Args:
+        image_file_path (str): Path to the image file.
+
+    Returns:
+        str: Extracted text from the image.
+    """
+    # Open the image using PIL
+    image = Image.open(image_file_path)
+
+    # Perform OCR on the image
+    extracted_text = pytesseract.image_to_string(image)
+
+    return extracted_text
